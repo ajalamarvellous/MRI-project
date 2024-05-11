@@ -28,7 +28,7 @@ def get_csv(dir : str, file_loc : str, pos_tags : list=pos_tags) -> None:
         csv_writer.writerow(["location", "label"])
         for dir_, folder, files in os.walk(dir):
             # check if it's postive image folder
-            if dir_.split("/")[-1] in pos_tags:
+            if (dir_.split("/")[-1] in pos_tags or dir_.split("/")[-2] in pos_tags):
                 # save to file if it's a dcm image with the positive tag
                 rows = [(f"{dir_}/{file}", 1) for file in files if file.endswith(".dcm")]
                 csv_writer.writerows(rows) 
@@ -41,3 +41,4 @@ def get_csv(dir : str, file_loc : str, pos_tags : list=pos_tags) -> None:
 if __name__ == "__main__":
     data_dir = "../data"
     file_dir = "../data/dataset.csv"
+    get_csv(data_dir, file_dir)
