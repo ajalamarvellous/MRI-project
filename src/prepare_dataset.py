@@ -27,9 +27,11 @@ class DicomDataset(Dataset):
         pos_tags: List[Any] = [],
         transform: bool = True,
     ):
+        # Read from file if filename is provided
         if filename != "":
             self.file = self.read_csv(filename)
         else:
+            # else read from the directory after confirming dir_loc and pos tags
             assert (dir_location != "") & (
                 pos_tags != []
             ), "Please provide the images directory and pos tags"
@@ -38,9 +40,11 @@ class DicomDataset(Dataset):
         self.transform = transform
 
     def __len__(self):
+        "Return the length of the dataset"
         return self.file.shape[0]
 
     def read_csv(self, filename: str) -> pd.DataFrame:
+        "Read the file address and labels from csv file"
         return pd.read_csv(filename)
 
     def create_dataframe(self, dir: str, pos_tags: List[Any]) -> pd.DataFrame:
@@ -68,12 +72,17 @@ class DicomDataset(Dataset):
         return pd.DataFrame(data, columns=["location", "label"])
 
     def read_dicom(self, file_name: str) -> np.ndarray:
+        "Read the custom dicom file provided"
         dicom = pydicom.read_file(file_name)
         data = dicom.pixel_array
         logger.debug("Dicom file read successfully...")
         return data
 
     def transform_fn(self, data: np.ndarray) -> torch.Tensor:
+        """
+        Transform the data(image) by randomly rotate, resize to 224x224
+        stardardise, normalise, convert to 1 filter image and to tensors
+        """
         ROTATION = [
             None,
             cv2.ROTATE_90_CLOCKWISE,
@@ -94,6 +103,7 @@ class DicomDataset(Dataset):
         return torch.from_numpy(data)
 
     def __getitem__(self, index: int) -> tuple:
+        "Return image data and label given the index"
         file_loc, target = self.file.iloc[index, 0], self.file.iloc[index, 1]
         data = self.read_dicom(file_loc)
         if self.transform:
