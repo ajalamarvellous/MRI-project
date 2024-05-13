@@ -5,3 +5,10 @@ seaborn
 pydicom
 pyyaml
 torch
+cv2
+scikit-learn
+pre-commit
+pylibjpeg
+pylibjpeg-libjpeg
+livelossplot
+tqdm
