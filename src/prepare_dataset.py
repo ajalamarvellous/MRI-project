@@ -112,6 +112,78 @@ class DicomDataset(Dataset):
         return data, target
 
 
+def stratify_split(
+    labels: List, val_size: float, test_size: float, train_size: float = 0
+):
+    """
+    Split the dataset into 3 places, trainset, testset and validation set with each
+    set containing the same proportion of positive examples
+
+    Parameter(s)
+    --------------
+    file_dir : str
+        location of the datasource
+    test_size : float
+        fraction of the dataset to keep as testset
+    val_size : float
+        fraction of the dataset to keep as valset
+    random_state : int
+        random state initialiser to ensure reproducibility
+
+    Return(s)
+    ----------
+    split_data : dict({str:tuple})
+        split data in format "set:(X, y)
+
+    """
+    if train_size == 0:
+        train_size = 1 - (test_size + val_size)
+    else:
+        total = val_size + test_size + train_size
+        assert (
+            total == 1
+        ), f"The data size specified is equals {total} not 1, please change"
+    data_size = len(labels)
+    logger.debug("data size: ", data_size)
+    # get indices for the postive and negative examples
+    pos_indices = [i for i, x in enumerate(labels) if x == 1]
+    neg_indices = [i for i, x in enumerate(labels) if x == 0]
+    # fraction of the positive values in the dataset
+    pos_fraction = np.sum(y_labels) / data_size
+    logger.debug(
+        f"Len pos {len(pos_indices)}, len neg {len(neg_indices)}, pos fract {pos_fraction}"
+    )
+
+    result = []
+
+    for size in [val_size, test_size, train_size]:
+        # Calculate the number of values for the val set and positve examples in it
+        size_ = int(np.floor(size * data_size))
+
+        pos_val_size = int(np.floor(pos_fraction * size_))
+        # randomly select the values from the separated indices
+        pos_val = np.random.choice(pos_indices, pos_val_size)
+        neg_val = np.random.choice(neg_indices, (size_ - pos_val_size))
+        logger.debug(f"Pos size: {len(pos_val)}, neg size {len(neg_val)}")
+
+        # remove the selected values from the pos_indices and neg_indices
+        pos_indices = list(set(pos_indices).difference(set(pos_val)))
+        neg_indices = list(set(neg_indices).difference(set(neg_val)))
+
+        indices = list(pos_val) + list(neg_val)
+        np.random.shuffle(indices)
+        logger.debug(
+            f"final size: {len(indices)}, fraction desired: {size}, \
+              fraction given: {(len(indices)/data_size)}, fraction o"
+        )
+        result.append(indices)
+    logger.info(
+        f"split completed... \n val: {len(result[0])} test: \
+                {len(result[1])}, train: {len(result[2])}"
+    )
+    return result
+
+
 if __name__ == "__main__":
     # data_dir = "../data/images"
     file_dir = "../data/temp_data.csv"
@@ -124,3 +196,4 @@ if __name__ == "__main__":
         f"No of y: {len(y_labels)}, \n \
           No of positive: {np.sum(y_labels)}"
     )
+    data_split = stratify_split(y_labels, val_size=0.3, test_size=0.2)
