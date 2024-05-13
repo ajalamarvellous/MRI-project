@@ -1,4 +1,6 @@
+import logging
 import os
+from typing import Any, List
 
 import cv2
 import numpy as np
@@ -7,31 +9,49 @@ import pydicom
 import torch
 from torch.utils.data import Dataset
 
+logging.basicConfig(
+    level=logging.INFO,
+    # fmt: off
+    format="%(asctime)s %(funcName)s[%(levelname)s]: %(message)s",
+    # fmt: on
+)
+logger = logging.getLogger()
 pos_tags = ["DHFDLAFH", "FJKAHFBC", "DHAJFVIF", "SHDCBDJEL"]
 
 
 class DicomDataset(Dataset):
-    def __init__(self, dir: str, pos_tags: list, transform: bool = True):
-        self.dir = dir
-        self.pos_tags = pos_tags
-        self.file = self.read_csv()
+    def __init__(
+        self,
+        filename: str = "",
+        dir_location: str = "",
+        pos_tags: List[Any] = [],
+        transform: bool = True,
+    ):
+        if filename != "":
+            self.file = self.read_csv(filename)
+        else:
+            assert (dir_location != "") & (
+                pos_tags != []
+            ), "Please provide the images directory and pos tags"
+
+            self.file = self.create_dataframe(dir_location, pos_tags)
         self.transform = transform
 
     def __len__(self):
         return self.file.shape[0]
 
-    def read_csv(self) -> pd.DataFrame:
+    def read_csv(self, filename: str) -> pd.DataFrame:
+        return pd.read_csv(filename)
+
+    def create_dataframe(self, dir: str, pos_tags: List[Any]) -> pd.DataFrame:
         """
         Create a pandas DataFrame that contains the location of the images
         and their label
         """
         data = list()
-        for dir_, folder, files in os.walk(self.dir):
+        for dir_, folder, files in os.walk(dir):
             # check if it's postive image folder
-            if (
-                dir_.split("/")[-1] in self.pos_tags
-                or dir_.split("/")[-2] in self.pos_tags
-            ):
+            if dir_.split("/")[-1] in pos_tags or dir_.split("/")[-2] in pos_tags:
                 # save to file if it's a dcm image with the positive tag
                 rows = [
                     (f"{dir_}/{file}", 1) for file in files if file.endswith(".dcm")
@@ -44,11 +64,13 @@ class DicomDataset(Dataset):
                     (f"{dir_}/{file}", 0) for file in files if file.endswith(".dcm")
                 ]
                 data.extend(rows)
+        logger.info("All files read into Dataset and ready to use...")
         return pd.DataFrame(data, columns=["location", "label"])
 
     def read_dicom(self, file_name: str) -> np.ndarray:
         dicom = pydicom.read_file(file_name)
         data = dicom.pixel_array
+        logger.debug("Dicom file read successfully...")
         return data
 
     def transform_fn(self, data: np.ndarray) -> torch.Tensor:
@@ -68,6 +90,7 @@ class DicomDataset(Dataset):
         # normalise
         data = cv2.normalize(data, None, 0, 1, cv2.NORM_MINMAX)
         data = np.expand_dims(data, 0)
+        logger.debug("data transformed successfully")
         return torch.from_numpy(data)
 
     def __getitem__(self, index: int) -> tuple:
@@ -75,15 +98,16 @@ class DicomDataset(Dataset):
         data = self.read_dicom(file_loc)
         if self.transform:
             data = self.transform_fn(data)
+        logger.debug(f"returning item {data.shape, target.shape}...")
         return data, target
 
 
 if __name__ == "__main__":
-    data_dir = "../data/images"
-    # file_dir = "../data/dataset.csv"
-    dataset = DicomDataset(data_dir, pos_tags)
+    # data_dir = "../data/images"
+    file_dir = "../data/temp_data.csv"
+    dataset = DicomDataset(file_dir)
     y_labels = []
-    for x, y in dataset:
+    for i, (x, y) in enumerate(dataset):
         # print(x, y)
         y_labels.append(y)
     print(
