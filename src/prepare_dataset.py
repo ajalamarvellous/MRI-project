@@ -45,7 +45,9 @@ class DicomDataset(Dataset):
 
     def read_csv(self, filename: str) -> pd.DataFrame:
         "Read the file address and labels from csv file"
-        return pd.read_csv(filename)
+        file = pd.read_csv(filename)
+        logger.info("Returning read file...")
+        return file
 
     def create_dataframe(self, dir: str, pos_tags: List[Any]) -> pd.DataFrame:
         """
@@ -109,12 +111,12 @@ class DicomDataset(Dataset):
         if self.transform:
             data = self.transform_fn(data)
         logger.debug(f"returning item {data.shape, target.shape}...")
-        return data, target
+        return data.type(torch.float), target
 
 
 def stratify_split(
     labels: List, val_size: float, test_size: float, train_size: float = 0
-):
+) -> List[Any]:
     """
     Split the dataset into 3 places, trainset, testset and validation set with each
     set containing the same proportion of positive examples
@@ -132,9 +134,9 @@ def stratify_split(
 
     Return(s)
     ----------
-    split_data : dict({str:tuple})
-        split data in format "set:(X, y)
-
+    split_data : list
+        index for the various split in the order
+        [validation_set, test_set, train_set]
     """
     if train_size == 0:
         train_size = 1 - (test_size + val_size)
@@ -149,7 +151,7 @@ def stratify_split(
     pos_indices = [i for i, x in enumerate(labels) if x == 1]
     neg_indices = [i for i, x in enumerate(labels) if x == 0]
     # fraction of the positive values in the dataset
-    pos_fraction = np.sum(y_labels) / data_size
+    pos_fraction = len(pos_indices) / data_size
     logger.debug(
         f"Len pos {len(pos_indices)}, len neg {len(neg_indices)}, pos fract {pos_fraction}"
     )
@@ -190,10 +192,10 @@ if __name__ == "__main__":
     dataset = DicomDataset(file_dir)
     y_labels = []
     for i, (x, y) in enumerate(dataset):
-        # print(x, y)
+        print(f"index: {i}, shape: {x.shape}")
         y_labels.append(y)
     print(
         f"No of y: {len(y_labels)}, \n \
           No of positive: {np.sum(y_labels)}"
     )
-    data_split = stratify_split(y_labels, val_size=0.3, test_size=0.2)
+    # data_split = stratify_split(y_labels, val_size=0.3, test_size=0.2)
