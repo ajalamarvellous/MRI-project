@@ -3,6 +3,7 @@ import os
 import random
 
 import numpy as np
+import pandas as pd
 import torch
 
 pos_tags = ["DHFDLAFH", "FJKAHFBC", "DHAJFVIF", "SHDCBDJEL"]
@@ -56,6 +57,11 @@ def get_ylabels(dataset):
     for i, (x, y) in enumerate(dataset):
         y_labels.append(y)
     return y_labels
+
+
+def return_ylabels(file_dir):
+    df = pd.read_csv(file_dir)
+    return list(df.iloc[:, 1].values)
 
 
 def seedall(seed):
