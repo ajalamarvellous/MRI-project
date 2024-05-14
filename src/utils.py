@@ -1,5 +1,9 @@
 import csv
 import os
+import random
+
+import numpy as np
+import torch
 
 pos_tags = ["DHFDLAFH", "FJKAHFBC", "DHAJFVIF", "SHDCBDJEL"]
 
@@ -52,6 +56,20 @@ def get_ylabels(dataset):
     for i, (x, y) in enumerate(dataset):
         y_labels.append(y)
     return y_labels
+
+
+def seedall(seed):
+    """
+    Set consistent seed for random, numpy and torch to ensure
+    reproducibility
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.backends.cudnn.deterministic = True
 
 
 if __name__ == "__main__":
