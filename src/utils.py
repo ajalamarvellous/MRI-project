@@ -43,6 +43,17 @@ def get_csv(dir: str, file_loc: str, pos_tags: list = pos_tags) -> None:
                 csv_writer.writerows(rows)
 
 
+def get_ylabels(dataset):
+    """
+    Returns the y labels with the index representing their index in the
+    dataset
+    """
+    y_labels = []
+    for i, (x, y) in enumerate(dataset):
+        y_labels.append(y)
+    return y_labels
+
+
 if __name__ == "__main__":
     data_dir = "../data/images"
     file_dir = "../data/dataset.csv"
