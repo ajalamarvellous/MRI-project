@@ -41,6 +41,7 @@ class ConvNet(torch.nn.Module):
         )  # (2(7-1) - 14 + 2) = 0
 
         self.linear_1 = torch.nn.Linear(28 * 28 * 32, num_classes)
+        self.drop_out = torch.nn.Dropout2d(0.2)
 
     def forward(self, x):
         # x = x.type(torch.float)
@@ -48,15 +49,32 @@ class ConvNet(torch.nn.Module):
         out = self.conv_1(x)
         out = F.relu(out)
         out = self.pool_1(out)
+        out = self.drop_out(out)
 
         out = self.conv_2(out)
         out = F.relu(out)
         out = self.pool_2(out)
+        out = self.drop_out(out)
 
         out = self.conv_3(out)
         out = F.relu(out)
         out = self.pool_3(out)
+        out = self.drop_out(out)
 
         logits = self.linear_1(out.view(-1, 28 * 28 * 32))
         probas = F.sigmoid(logits)
         return probas
+
+
+# class Resnet(torch.nn.Module):
+#     def __init__(self, num_classes):
+#         super(Resnet, self).__init__()
+#         self.num_classes = num_classes
+
+#         self.model = models.resnet18(pretrained=False)
+#         self.model.conv1 = torch.nn.Conv2d(
+#             1, 64, kernel_size=7, stride=2, padding=3, bias=False
+#         )
+#         fc = torch.nn.Sequential(
+#             torch.nn.Linear()
+#         )
