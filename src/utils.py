@@ -78,6 +78,11 @@ def seedall(seed):
     torch.backends.cudnn.deterministic = True
 
 
+def load_model(checkpoint_dir):
+    checkpoint = torch.load(checkpoint_dir)
+    return checkpoint
+
+
 if __name__ == "__main__":
     data_dir = "../data/images"
     file_dir = "../data/dataset.csv"
