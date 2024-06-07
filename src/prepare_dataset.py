@@ -114,9 +114,7 @@ class DicomDataset(Dataset):
         return data.type(torch.float), target
 
 
-def stratify_split(
-    labels: List, val_size: float, test_size: float, train_size: float = 0
-) -> List[Any]:
+def stratify_split(labels: List, test_size: float, train_size: float = 0) -> List[Any]:
     """
     Split the dataset into 3 places, trainset, testset and validation set with each
     set containing the same proportion of positive examples
@@ -127,8 +125,6 @@ def stratify_split(
         location of the datasource
     test_size : float
         fraction of the dataset to keep as testset
-    val_size : float
-        fraction of the dataset to keep as valset
     random_state : int
         random state initialiser to ensure reproducibility
 
@@ -139,9 +135,9 @@ def stratify_split(
         [validation_set, test_set, train_set]
     """
     if train_size == 0:
-        train_size = 1 - (test_size + val_size)
+        train_size = 1 - test_size  # + val_size)
     else:
-        total = val_size + test_size + train_size
+        total = test_size + train_size
         assert (
             total == 1
         ), f"The data size specified is equals {total} not 1, please change"
@@ -155,10 +151,9 @@ def stratify_split(
     logger.debug(
         f"Len pos {len(pos_indices)}, len neg {len(neg_indices)}, pos fract {pos_fraction}"
     )
-
     result = []
 
-    for size in [val_size, test_size, train_size]:
+    for size in [test_size, train_size]:
         # Calculate the number of values for the val set and positve examples in it
         size_ = int(np.floor(size * data_size))
 
@@ -180,10 +175,9 @@ def stratify_split(
         )
         result.append(indices)
     logger.info(
-        f"split completed... \n val: {len(result[0])} test: \
-                {len(result[1])}, train: {len(result[2])}"
+        f"split completed... \n test: {len(result[0])}, train: {len(result[1])}"
     )
-    return result
+    return (result, pos_fraction)
 
 
 if __name__ == "__main__":
