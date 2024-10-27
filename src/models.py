@@ -64,17 +64,3 @@ class ConvNet(torch.nn.Module):
         logits = self.linear_1(out.view(-1, 28 * 28 * 32))
         probas = F.sigmoid(logits)
         return probas
-
-
-# class Resnet(torch.nn.Module):
-#     def __init__(self, num_classes):
-#         super(Resnet, self).__init__()
-#         self.num_classes = num_classes
-
-#         self.model = models.resnet18(pretrained=False)
-#         self.model.conv1 = torch.nn.Conv2d(
-#             1, 64, kernel_size=7, stride=2, padding=3, bias=False
-#         )
-#         fc = torch.nn.Sequential(
-#             torch.nn.Linear()
-#         )
